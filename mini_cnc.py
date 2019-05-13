@@ -3,8 +3,11 @@ import time
 
 
 class Servo:
+    """
+        Simple class to represent a single 9G servo. 
+    """
     
-    def __init__(self, pin: int, freq: int, rot_per_s: float, name: str = "unknown"):
+    def __init__(self, pin: int, freq: int, rot_per_s: float, name: str = "unknown", gear_radius: float = 1):
         self.name = name
         GPIO.setup(pin, GPIO.OUT)
         self.control_pin = GPIO.PWM(pin, freq)
@@ -12,11 +15,22 @@ class Servo:
         self.rot_per_s = rot_per_s
         self.freq = freq # is this needed? cant i read the current freq from the pin itself?
         self.last_angle = -1
+        self.gear_radius = gear_radius
+        
+    def move(self, length):
+        pass
+    
         
     def turn(self, angle: int):
+        """
+            Turns the servo to a defined angle (in degrees).
+        """
         # limit turn angle to 0-180°
-        if 0 <= angle <= 180:            
-            duration_ms = 0.5 + (angle / 180)  * 2.5# 1ms -> 0° and 2ms -> 180°
+        if 0 <= angle <= 180:
+            # according to the specs, pulse length should be between 1ms and 2ms.
+            # but this leads to a movement of only 90°
+            # when extending this range to 0.5ms to 2.5ms, i get 180°.
+            duration_ms = 0.5 + (angle / 180)  * 2.5
             duration_rel = duration_ms / (10 / self.freq)
             self.control_pin.ChangeDutyCycle(duration_rel)
             print("setting cycle to {} ({}ms)".format(duration_rel, duration_ms))
@@ -29,6 +43,9 @@ class Servo:
             raise Error("servo {} can only rotate between 0 and 180 degrees".format(self.name))
     
     def shutdown(self):
+        """
+            Shutdown the servo.
+        """        
         self.control_pin.stop()
 
 
@@ -77,6 +94,7 @@ if __name__ == "__main__":
     try:
         print("mini cnc\n"+("=" * 8))
         
+        # configuration... use defaults for y and z servos.
         configuration = {
             "name": "blue wonder",
             "x_axis_pin_nr": 26,
